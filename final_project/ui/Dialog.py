@@ -31,7 +31,7 @@ class Dialog(QDialog, Ui_Dialog):
         for i in num:
             i.clicked.connect(self.digitClicked)
         self.clearAllButton.clicked.connect(self.clearAll)
-        self.wait = True
+        self.waitingForOperand = True
         self.plusButton.clicked.connect(self.additiveOperatorClicked)
         self.temp = 0
         self.equalButton.clicked.connect(self.equalClicked)
@@ -45,17 +45,17 @@ class Dialog(QDialog, Ui_Dialog):
         當顯示幕已經為 0, 再按零不會顯示 00, 而仍顯示 0 或 0.0
         
         '''
-        #pass
-        if self.wait:
+        button = self.sender()
+        #避免重複 0。
+        if self.display.text() == '0' and int(button.text())== 0.0:
+            return
+        #清除螢幕 (運算的時候)
+        if self.waitingForOperand:
             self.display.clear()
-            self.wait = False
-
-        clickedButton = self.sender()
-        digitValue = int(clickedButton.text())
+            self.waitingForOperand = False
+        #疊加數字
+        self.display.setText(self.display.text() + button.text())
     
-        self.display.setText(self.display.text() + str(digitValue))
-        
-        
         
     def unaryOperatorClicked(self):
         '''單一運算元按下後處理方法'''
