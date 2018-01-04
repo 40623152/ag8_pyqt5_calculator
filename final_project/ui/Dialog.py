@@ -74,22 +74,22 @@ class Dialog(QDialog, Ui_Dialog):
         self.display.clear()
     def multiplicativeOperatorClicked(self):
         '''乘或除按下後進行的處理方法'''
-        pass
-        
-    def equalClicked(self):
-        '''等號按下後的處理方法'''
         #pass
-        #print(self.temp,  self.display.text())
+        clickedButton = self.sender()
+        clickedOperator = clickedButton.text()
         operand = float(self.display.text())
-        if self.pendingAdditiveOperator:
-            if not self.calculate(operand, self.pendingAdditiveOperator):
+        if self.pendingMultiplicativeOperator:
+            if not self.calculate(operand, self.pendingMultiplicativeOperator):
+                self.abortOperation()
                 return
-            self.pendingAdditiveOperator = ''
+            self.display.setText(str(self.factorSoFar))
         else:
-            self.sumSoFar = operand
-        self.display.setText(str(self.temp + self.sumSoFar))
-        self.sumSoFar = 0.0
-        
+            self.factorSoFar = operand
+        self.pendingMultiplicativeOperator = clickedOperator
+        self.wait = True
+    def equalClicked(self):
+       '''等號按下後的處理方法'''    
+        #pass
         
     def pointClicked(self):
         '''小數點按下後的處理方法'''
@@ -101,11 +101,20 @@ class Dialog(QDialog, Ui_Dialog):
         
     def backspaceClicked(self):
         '''回復鍵按下的處理方法'''
-        pass
-        
+        #pass
+        text = self.display.text()[:-1]
+        if not text:
+            text = '0'
+            self.waitingForOperand = True
+            self.display.clear()
+            self.wait = True
+ 
+        self.display.setText(text)
     def clear(self):
         '''清除鍵按下後的處理方法'''
-        pass
+        #pass
+        self.wait = True
+        self.display.setText('0')
         
     def clearAll(self):
         '''全部清除鍵按下後的處理方法'''
