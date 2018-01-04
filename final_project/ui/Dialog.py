@@ -40,8 +40,11 @@ class Dialog(QDialog, Ui_Dialog):
         self.backspaceButton.clicked.connect(self.backspaceClicked)
         self.pushButton_22.clicked.connect(self.pointClicked)
         self.pendingAdditiveOperator = ''
+        self.pendingMultiplicativeOperator = ''
+        for button in [self.timesButton, self.divisionButton]:
+            button.clicked.connect(self.multiplicativeOperatorClicked)
         self.sumSoFar = 0.0
-
+        self.factorSoFar = 0.0
     def digitClicked(self):
         '''
         使用者按下數字鍵, 必須能夠累積顯示該數字
@@ -69,9 +72,36 @@ class Dialog(QDialog, Ui_Dialog):
         #pass
         clickedButton = self.sender()
         clickedOperator = clickedButton.text()
+        operand = float(self.display.text())
+        #乘除運算
+        if self.pendingMultiplicativeOperator:
+            '''
+            計算：self.calculate(乘數或除數, 運算子)
+            回傳 bool 以知道運算成功與否
+            Python 文法：[if not 結果:] 當失敗時執行 self.abortOperation()。
+            '''
+            if not self.calculate(operand, self.pendingMultiplicativeOperator):
+                self.abortOperation()
+                return
+            #上次的結果
+            self.display.setText(str(self.factorSoFar))
+            #交換 operand 和 self.factorSoFar
+            operand, self.factorSoFar = self.factorSoFar, 0.0
+            self.pendingMultiplicativeOperator = ''
+        #加減運算
+        if self.pendingAdditiveOperator:
+            '''
+            同上
+            '''
+            if not self.calculate(operand, self.pendingAdditiveOperator):
+                self.abortOperation()
+                return
+            self.display.setText(str(self.sumSoFar))
+        else:
+            self.sumSoFar = operand
         self.pendingAdditiveOperator = clickedOperator
-        self.temp = float(self.display.text())
-        self.display.clear()
+        self.waitingForOperand = True
+        
     def multiplicativeOperatorClicked(self):
         '''乘或除按下後進行的處理方法'''
         #pass
@@ -86,18 +116,50 @@ class Dialog(QDialog, Ui_Dialog):
         else:
             self.factorSoFar = operand
         self.pendingMultiplicativeOperator = clickedOperator
-        self.wait = True
-    def equalClicked(self):
-       '''等號按下後的處理方法'''    
-        #pass
+        self.waitingForOperand = True
+    def equalClicked(self):    
+        operand = float(self.display.text())
+        '''
+        同乘除
+        '''
+        if self.pendingMultiplicativeOperator:
+            if not self.calculate(operand, self.pendingMultiplicativeOperator):
+                self.abortOperation()
+                return
+            operand = self.factorSoFar
+            self.factorSoFar = 0.0
+            self.pendingMultiplicativeOperator = ''
+        '''
+        同加減
+        '''
+        if self.pendingAdditiveOperator:
+            if not self.calculate(operand, self.pendingAdditiveOperator):
+                self.abortOperation()
+                return
+            self.pendingAdditiveOperator = ''
+        else:
+            self.sumSoFar = operand
+        self.display.setText(str(self.sumSoFar))
+        self.sumSoFar = 0.0
+        self.waitingForOperand = True
+    
         
     def pointClicked(self):
         '''小數點按下後的處理方法'''
-        pass
+        if self.waitingForOperand:
+            self.display.setText('0')
+        if "." not in self.display.text():
+            self.display.setText(self.display.text() + ".")
+        self.waitingForOperand = False
         
     def changeSignClicked(self):
         '''變號鍵按下後的處理方法'''
-        pass
+        if self.waitingForOperand:
+            self.display.setText('0')
+        if "." not in self.display.text():
+            self.display.setText(self.display.text() + ".")
+        self.waitingForOperand = False
+    
         
     def backspaceClicked(self):
         '''回復鍵按下的處理方法'''
@@ -107,19 +169,18 @@ class Dialog(QDialog, Ui_Dialog):
             text = '0'
             self.waitingForOperand = True
             self.display.clear()
-            self.wait = True
  
         self.display.setText(text)
     def clear(self):
         '''清除鍵按下後的處理方法'''
         #pass
-        self.wait = True
+        self.waitingForOperand = True
         self.display.setText('0')
         
     def clearAll(self):
         '''全部清除鍵按下後的處理方法'''
         #pass
-        self.wait = True
+        self.waitingForOperand = True
         #self.temp = 0
         self.display.setText('0')
         
